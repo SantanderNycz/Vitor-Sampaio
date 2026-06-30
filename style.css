@@ -537,6 +537,29 @@ nav button:hover { opacity: .55; }
   gap: 1.25rem;
 }
 
+/* Desktop: frase + links lado a lado */
+@media (min-width: 700px) {
+  .contato-simples {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: clamp(2rem, 6vw, 5rem);
+    max-width: 900px;
+  }
+  .contato-quote {
+    padding-bottom: 0;
+    border-bottom: none;
+    border-right: 1px solid rgba(138,111,82,.3);
+    padding-right: clamp(2rem, 6vw, 5rem);
+  }
+  .contato-links {
+    align-items: flex-end;
+  }
+  .info-link {
+    justify-content: flex-end;
+  }
+}
+
 .info-link {
   font-family: 'Work Sans', sans-serif;
   font-size: 1rem;
