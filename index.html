@@ -339,6 +339,24 @@
     </div>
   </section>
 
+  <!-- ══ MODAL ════════════════════════════════════════ -->
+  <div id="modal" class="modal-overlay" aria-modal="true" role="dialog">
+    <button class="modal-close" id="modal-close" aria-label="Fechar">&#x2715;</button>
+    <div class="modal-stage" id="modal-stage">
+      <div class="modal-img-wrap" id="modal-img-wrap">
+        <img id="modal-img" src="" alt="" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <p id="modal-caption" class="modal-caption"></p>
+      <div class="modal-zoom-bar">
+        <button class="modal-zoom-btn" id="btn-zoom-out" aria-label="Zoom out">&#x2212;</button>
+        <span id="zoom-level" class="zoom-level-label">100%</span>
+        <button class="modal-zoom-btn" id="btn-zoom-in"  aria-label="Zoom in">&#x2B;</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ══ FOOTER ═══════════════════════════════════════ -->
   <footer id="footer">
     <div class="footer-inner">
@@ -424,6 +442,104 @@
 
     document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .bento-cell')
       .forEach(function (el) { io.observe(el); });
+
+    /* ── Modal ──────────────────────────────────────────── */
+    var modalOverlay = document.getElementById('modal');
+    var modalImg     = document.getElementById('modal-img');
+    var modalCaption = document.getElementById('modal-caption');
+    var modalStage   = document.getElementById('modal-stage');
+    var zoomLabel    = document.getElementById('zoom-level');
+    var btnZoomIn    = document.getElementById('btn-zoom-in');
+    var btnZoomOut   = document.getElementById('btn-zoom-out');
+    var scale = 1;
+    var MIN_SCALE = 0.5, MAX_SCALE = 4, STEP = 0.3;
+
+    function updateZoom() {
+      modalImg.style.transform = 'scale(' + scale.toFixed(2) + ')';
+      zoomLabel.textContent    = Math.round(scale * 100) + '%';
+      btnZoomIn.disabled       = scale >= MAX_SCALE;
+      btnZoomOut.disabled      = scale <= MIN_SCALE;
+      modalStage.classList.toggle('zoomed', scale > 1);
+      /* expand wrap so scrollbars appear when zoomed */
+      var nat = modalImg.naturalWidth || 800;
+      var natH = modalImg.naturalHeight || 800;
+      modalImg.parentElement.style.width  = Math.round(nat  * scale) + 'px';
+      modalImg.parentElement.style.height = Math.round(natH * scale) + 'px';
+    }
+
+    function setScale(s) {
+      scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, s));
+      updateZoom();
+    }
+
+    function openModal(src, caption) {
+      scale = 1;
+      modalImg.src = src;
+      modalImg.alt = caption;
+      modalCaption.textContent = caption;
+      modalImg.parentElement.style.width  = '';
+      modalImg.parentElement.style.height = '';
+      modalImg.style.transform = 'scale(1)';
+      zoomLabel.textContent = '100%';
+      btnZoomIn.disabled  = false;
+      btnZoomOut.disabled = false;
+      modalStage.scrollLeft = 0;
+      modalStage.scrollTop  = 0;
+      modalStage.classList.remove('zoomed');
+      modalOverlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      modalOverlay.classList.remove('open');
+      document.body.style.overflow = '';
+      setTimeout(function () { modalImg.src = ''; }, 300);
+    }
+
+    /* click backdrop to close */
+    modalOverlay.addEventListener('click', function (e) {
+      if (e.target === modalOverlay || e.target === modalStage) closeModal();
+    });
+
+    /* close button */
+    document.getElementById('modal-close').addEventListener('click', closeModal);
+
+    /* ESC to close */
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeModal();
+      if (e.key === '+' || e.key === '=') setScale(scale + STEP);
+      if (e.key === '-') setScale(scale - STEP);
+    });
+
+    /* zoom buttons */
+    btnZoomIn.addEventListener('click',  function () { setScale(scale + STEP); });
+    btnZoomOut.addEventListener('click', function () { setScale(scale - STEP); });
+
+    /* scroll wheel zoom */
+    modalStage.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      var delta = e.deltaY < 0 ? STEP : -STEP;
+      setScale(scale + delta);
+    }, { passive: false });
+
+    /* click on stage toggles fit ↔ 2× */
+    modalStage.addEventListener('click', function (e) {
+      if (e.target !== modalStage && e.target !== modalImg) return;
+      setScale(scale > 1 ? 1 : 2);
+    });
+
+    /* open on photo cell click */
+    document.querySelectorAll('.cell-photo').forEach(function (cell) {
+      cell.addEventListener('click', function () {
+        var img = cell.querySelector('img');
+        if (!img) return;
+        var caption = (img.alt || '')
+          .replace(/\s*—\s*Vitor Sampaio\s*/gi, '')
+          .replace(/\s*—\s*VS Cerâmica\s*/gi, '')
+          .trim();
+        openModal(img.src, caption);
+      });
+    });
   </script>
 
 </body>
